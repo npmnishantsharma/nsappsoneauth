@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { isSupportedLocale, translate } from "@/src/i18n/messages";
 
@@ -18,6 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function SignupLayout({
   children,
-}: LayoutProps<"/signup">) {
+}: {
+  children: ReactNode;
+}) {
   return children;
 }

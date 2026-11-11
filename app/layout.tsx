@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { LocaleProvider } from "@/src/i18n/LocaleProvider";
+import { M3ThemeProvider } from "@/app/components/M3ThemeProvider";
 import { isSupportedLocale, translate } from "@/src/i18n/messages";
 import "./globals.css";
+import "./m3-expressive.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -78,7 +81,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
   const localeCookie = cookieStore.get("oneauth-locale")?.value;
   const locale = isSupportedLocale(localeCookie) ? localeCookie : "en";
@@ -86,7 +89,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
-        <LocaleProvider initialLocale={locale}>{children}</LocaleProvider>
+        <M3ThemeProvider><LocaleProvider initialLocale={locale}>{children}</LocaleProvider></M3ThemeProvider>
       </body>
     </html>
   );

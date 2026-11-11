@@ -7,6 +7,13 @@ export type VerificationEmailInput = {
   expiresInHours?: number;
 };
 
+export type PasswordResetEmailInput = {
+  email: string;
+  displayName?: string | null;
+  resetUrl: string;
+  expiresInHours?: number;
+};
+
 export class BrevoEmailError extends Error {
   constructor(
     message: string,
@@ -86,7 +93,64 @@ export async function sendVerificationEmail(input: VerificationEmailInput): Prom
   });
 
   if (!response.ok) {
-    // Do not expose Brevo's response body or credentials to the client.
+    throw new BrevoEmailError("The email delivery service rejected the message.", response.status);
+  }
+}
+
+export async function sendPasswordResetEmail(input: PasswordResetEmailInput): Promise<void> {
+  const apiKey = requiredEnv("BREVO_API_KEY");
+  const senderEmail = requiredEnv("BREVO_SENDER_EMAIL");
+  const senderName = process.env.BREVO_SENDER_NAME?.trim() || "OneAuth";
+  const recipientName = input.displayName?.trim();
+  const greeting = recipientName ? `Hi ${escapeHtml(recipientName)},` : "Hi there,";
+  const greetingText = recipientName ? `Hi ${recipientName},` : "Hi there,";
+  const expiresInHours = input.expiresInHours ?? 1;
+  const safeUrl = escapeHtml(input.resetUrl);
+
+  const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "api-key": apiKey,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      sender: { name: senderName, email: senderEmail },
+      to: [{ email: input.email, ...(recipientName ? { name: recipientName } : {}) }],
+      subject: "Reset your OneAuth password",
+      textContent: [
+        greetingText,
+        "",
+        "We received a request to reset your password for your OneAuth account.",
+        "Reset your password using this link:",
+        input.resetUrl,
+        "",
+        `This link expires in ${expiresInHours} hour${expiresInHours === 1 ? "" : "s"}.`,
+        "If you didn't request a password reset, you can safely ignore this email.",
+      ].join("\n"),
+      htmlContent: `<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:32px 16px;background:#f5f5f5;font-family:Arial,Helvetica,sans-serif;color:#171717">
+    <main style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;border-radius:16px;padding:32px">
+      <p style="font-size:12px;font-weight:700;letter-spacing:2px;color:#525252">ONEAUTH</p>
+      <h1 style="font-size:24px;line-height:1.3">Reset your password</h1>
+      <p>${greeting}</p>
+      <p>We received a request to reset your password for your OneAuth account. Click the button below to choose a new password.</p>
+      <p style="margin:28px 0"><a href="${safeUrl}" style="display:inline-block;background:#171717;color:#fff;text-decoration:none;padding:13px 20px;border-radius:8px;font-weight:700">Reset password</a></p>
+      <p style="font-size:14px;color:#525252">This link expires in ${expiresInHours} hour${expiresInHours === 1 ? "" : "s"}. If the button doesn't work, copy this URL into your browser:</p>
+      <p style="font-size:12px;overflow-wrap:anywhere"><a href="${safeUrl}" style="color:#404040">${safeUrl}</a></p>
+      <hr style="border:0;border-top:1px solid #e5e5e5;margin:28px 0" />
+      <p style="font-size:12px;color:#737373">If you didn't request a password reset, you can safely ignore this email.</p>
+    </main>
+  </body>
+</html>`,
+    }),
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => {
+    throw new BrevoEmailError("Could not connect to the email delivery service.");
+  });
+
+  if (!response.ok) {
     throw new BrevoEmailError("The email delivery service rejected the message.", response.status);
   }
 }

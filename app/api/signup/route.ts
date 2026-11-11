@@ -3,9 +3,18 @@ import { NextResponse } from "next/server";
 import { discardPendingRegistration, createAccount } from "@/src/lib/auth/account-store";
 import { BrevoEmailError, sendVerificationEmail } from "@/src/lib/email/brevo";
 import { validateEmail, validateUsername } from "@/src/lib/identity/identity.validation";
+import { allowOAuthRequest } from "@/src/lib/oauth/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    try {
+      if (!(await allowOAuthRequest(request, "signup-ip", 10, 60))) {
+        return NextResponse.json({ error: "Too many sign-up requests. Please try again later." }, { status: 429 });
+      }
+    } catch {
+      // Allow request to proceed if Redis rate limiting is temporarily unavailable
+    }
+
     const formData = await request.formData();
     const email = String(formData.get("email") ?? "").trim();
     const displayName = String(formData.get("displayName") ?? "").trim();
@@ -42,7 +51,7 @@ export async function POST(request: Request) {
 
     try {
       const configuredBaseUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
-      const baseUrl = configuredBaseUrl || (process.env.NODE_ENV === "production" ? "" : new URL(request.url).origin);
+      const baseUrl = configuredBaseUrl || new URL(request.url).origin;
       if (!baseUrl) throw new Error("APP_URL_REQUIRED");
 
       const parsedBaseUrl = new URL(baseUrl);

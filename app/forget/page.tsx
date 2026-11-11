@@ -8,11 +8,36 @@ import { LanguagePicker } from "../components/LanguagePicker";
 export default function ForgetPasswordPage() {
   const [isDark, setIsDark] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const { t } = useTranslation();
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitted(true);
+    setErrorMsg("");
+    setLoading(true);
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "").trim();
+
+    try {
+      const response = await fetch("/api/forget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok && response.status !== 200) {
+        setErrorMsg(data.error || t("Unable to send reset link. Please try again."));
+      } else {
+        setSubmitted(true);
+      }
+    } catch {
+      setErrorMsg(t("Network error. Please try again."));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -43,6 +68,12 @@ export default function ForgetPasswordPage() {
             {t("Enter the email address for your account and we’ll send you a reset link.")}
           </p>
         </header>
+
+        {errorMsg && (
+          <div className="error-banner" style={{ color: "#ef4444", marginBottom: "1rem", fontSize: "0.875rem" }}>
+            {errorMsg}
+          </div>
+        )}
 
         {submitted ? (
           <p className="recovery-message" role="status">
@@ -76,8 +107,8 @@ export default function ForgetPasswordPage() {
                 />
               </div>
             </div>
-            <button className="continue-button" type="submit">
-              <span>{t("Send reset link")}</span>
+            <button className="continue-button" disabled={loading} type="submit">
+              <span>{loading ? t("Sending...") : t("Send reset link")}</span>
             </button>
           </form>
         )}

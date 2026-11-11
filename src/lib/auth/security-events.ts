@@ -1,7 +1,5 @@
-import "server-only";
-
 import { randomUUID } from "node:crypto";
-import { db } from "@/src/prisma/db";
+import { db } from "../../prisma/db.ts";
 
 export type SecurityEventType =
   | "LOGIN_SUCCESS"
@@ -16,7 +14,9 @@ export type SecurityEventType =
   | "TOTP_DISABLED"
   | "RECOVERY_CODE_USED"
   | "PROFILE_UPDATED"
-  | "USERNAME_CHANGED";
+  | "USERNAME_CHANGED"
+  | "ACCOUNT_RECOVERY_STARTED"
+  | "PASSWORD_RESET";
 
 type SecurityEventInput = {
   userId?: string | null;

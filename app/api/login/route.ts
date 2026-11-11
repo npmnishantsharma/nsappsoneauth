@@ -8,6 +8,7 @@ import { writeSecurityEvent } from "@/src/lib/auth/security-events";
 import { safeRedirectPath } from "@/src/lib/auth/redirect";
 import { hasTotpEnabled, verifyTotpForLogin } from "@/src/lib/auth/security-settings";
 import { deleteTemporaryValue, getTemporaryValue, setTemporaryValue } from "@/src/lib/redis/temporary";
+import { allowOAuthRequest } from "@/src/lib/oauth/rate-limit";
 
 const MFA_CHALLENGE_PREFIX = "oneauth:login-mfa:";
 const MFA_CHALLENGE_TTL_SECONDS = 5 * 60;
@@ -42,6 +43,14 @@ async function completeLogin(request: Request, userId: string, method: "PASSWORD
 
 export async function POST(request: Request) {
   try {
+    try {
+      if (!(await allowOAuthRequest(request, "login-ip", 15, 60))) {
+        return NextResponse.json({ error: "Too many sign-in attempts. Please try again later." }, { status: 429 });
+      }
+    } catch {
+      // Allow request to proceed if Redis rate limiting is temporarily unavailable
+    }
+
     const formData = await request.formData();
     const mfaChallenge = String(formData.get("mfaChallenge") ?? "").trim();
     const redirectTo = safeRedirectPath(formData.get("redirect"));

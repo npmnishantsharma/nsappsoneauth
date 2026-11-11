@@ -175,6 +175,7 @@ async function createVerifiedAccount(record: PendingRegistration): Promise<void>
 }
 
 async function removePendingRegistration(tokenHash: string, email: string): Promise<void> {
+  if (!process.env["UPSTASH_REDIS_REST_URL"] || !process.env["UPSTASH_REDIS_REST_TOKEN"]) return;
   const client = await redis();
   await client.del(`${PENDING_KEY_PREFIX}${tokenHash}`);
   const emailKey = `${PENDING_EMAIL_PREFIX}${email}`;
@@ -191,7 +192,6 @@ export async function createAccount(
   },
   options: { requireVerification?: boolean } = {},
 ): Promise<StoredAccount> {
-  const client = await redis();
   const email = input.email.trim().toLowerCase();
   const username = input.username?.trim() || null;
 
@@ -225,6 +225,7 @@ export async function createAccount(
     return account;
   }
 
+  const client = await redis();
   const token = randomBytes(32).toString("base64url");
   const tokenHash = hashToken(token);
   const expiresAt = new Date(now.getTime() + PENDING_TTL_SECONDS * 1000).toISOString();

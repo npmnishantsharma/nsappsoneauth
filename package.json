@@ -21,6 +21,10 @@
     "redis:check": "node --conditions=react-server --experimental-strip-types scripts/redis-check.mjs"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.5.0",
+    "@mui/material": "^9.5.0",
     "@prisma/client": "^7.10.0",
     "@prisma/orm-postgres": "^8.0.0-rc.14",
     "@simplewebauthn/browser": "^14.0.0",

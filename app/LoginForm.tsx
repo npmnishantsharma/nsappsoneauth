@@ -29,6 +29,8 @@ function BrandMark() {
 export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [loginStep, setLoginStep] = useState<"email" | "password">("email");
+  const [email, setEmail] = useState("");
   const [isDark, setIsDark] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [mfaChallenge, setMfaChallenge] = useState<string | null>(null);
@@ -39,9 +41,18 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoginError("");
+    if (!mfaChallenge && loginStep === "email") {
+      const formData = new FormData(event.currentTarget);
+      const enteredEmail = String(formData.get("email") ?? "").trim();
+      if (!enteredEmail) return;
+      setEmail(enteredEmail);
+      setLoginStep("password");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const formData = new FormData(event.currentTarget);
+      if (!mfaChallenge) formData.set("email", email);
       formData.set("redirect", redirectTo);
       const response = await fetch("/api/login", { method: "POST", body: formData });
       const payload = (await response.json().catch(() => ({}))) as { error?: string; requiresTwoFactor?: boolean; challenge?: string; ok?: boolean };
@@ -104,11 +115,15 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
     <main className={`auth-screen${isDark ? " auth-screen-dark" : ""}`}>
       <section aria-labelledby="login-heading" className="auth-card">
         <header className="auth-header">
-          {mfaChallenge && (
+          {(mfaChallenge || loginStep === "password") && (
             <button
-              aria-label={t("Back to sign in")}
+              aria-label={t(mfaChallenge ? "Back to sign in" : "Change email address")}
               className="mfa-back-arrow"
-              onClick={() => { setMfaChallenge(null); setLoginError(""); }}
+              onClick={() => {
+                setLoginError("");
+                if (mfaChallenge) setMfaChallenge(null);
+                else { setLoginStep("email"); setShowPassword(false); }
+              }}
               type="button"
             >
               <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -118,8 +133,8 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
             </button>
           )}
           <BrandMark />
-          <h1 id="login-heading">{t(mfaChallenge ? "Verify it's you" : "Welcome back")}</h1>
-          <p className="intro-copy">{t(mfaChallenge ? "Enter the current 6-digit code from your authenticator app, or use an unused recovery code." : "One identity. Every app. Sign in to access your interconnected workspace.")}</p>
+          <h1 id="login-heading">{t(mfaChallenge ? "Verify it's you" : loginStep === "password" ? "Welcome back" : "Sign in")}</h1>
+          <p className="intro-copy">{t(mfaChallenge ? "Enter the current 6-digit code from your authenticator app, or use an unused recovery code." : loginStep === "password" ? "Enter your password to continue to your OneAuth account." : "Enter your email address to continue to your OneAuth account.")}</p>
         </header>
 
         <form className="sign-in-form" onSubmit={handleSubmit}>
@@ -134,11 +149,17 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
                 </div>
               </div>
             </>
+          ) : loginStep === "email" ? (
+            <div className="field-group">
+              <label htmlFor="email">{t("Email address")}</label>
+              <div className="input-wrap"><Icon className="field-icon" name="email" /><input autoComplete="username" autoFocus id="email" name="email" placeholder="you@example.com" required type="email" /></div>
+            </div>
           ) : (
             <>
-              <div className="field-group">
-                <label htmlFor="email">{t("Email address")}</label>
-                <div className="input-wrap"><Icon className="field-icon" name="email" /><input autoComplete="username" id="email" name="email" placeholder="you@example.com" required type="email" /></div>
+              <input name="email" type="hidden" value={email} />
+              <div className="login-account-summary">
+                <span className="login-account-avatar" aria-hidden="true">{email.trim().charAt(0).toUpperCase()}</span>
+                <span className="login-account-email">{email}</span>
               </div>
               <div className="field-group">
                 <label htmlFor="password">{t("Password")}</label>
@@ -158,9 +179,9 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
           {loginError && <p className="form-error" role="alert">{loginError}</p>}
 
           <button className="continue-button" disabled={isSubmitting || isPasskeyLoading} type="submit">
-            <span>{isSubmitting ? t("Signing in...") : t(mfaChallenge ? "Verify and sign in" : "Continue")}</span><Icon name="arrow" />
+            <span>{isSubmitting ? t("Signing in...") : t(mfaChallenge ? "Verify and sign in" : loginStep === "email" ? "Next" : "Sign in")}</span><Icon name="arrow" />
           </button>
-          {!mfaChallenge && (
+          {!mfaChallenge && loginStep === "email" && (
             <>
               <div className="login-method-divider"><span>{t("OR")}</span></div>
               <button className="login-passkey-button" disabled={isPasskeyLoading || isSubmitting} onClick={() => void handlePasskeyLogin()} type="button">

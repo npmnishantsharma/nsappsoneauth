@@ -3,7 +3,12 @@ import test from "node:test";
 
 import { createAccount, verifyAccountToken, verifyCredentials } from "./account-store.ts";
 
-test("signup verification keeps the account pending until the token is confirmed", async () => {
+test("signup verification keeps the account pending until the token is confirmed", async (t) => {
+  if (!process.env["DATABASE_URL"] || !process.env["UPSTASH_REDIS_REST_URL"]) {
+    t.skip("Database or Redis not configured for integration testing");
+    return;
+  }
+
   const email = `verify-${Date.now()}-${Math.random().toString(16).slice(2)}@example.com`;
   const username = `pending-${Date.now()}`;
   const password = "Password123!";
