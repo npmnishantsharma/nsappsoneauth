@@ -1,6 +1,6 @@
-import Link from "next/link";
-import { Box, Button, Chip, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Box, Chip, Paper, Stack, TextField, Typography } from "@mui/material";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import { PortalLinkButton } from "@/app/components/PortalLinks";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 
@@ -29,7 +29,7 @@ export default async function OAuthTestCallbackPage({ searchParams }: { searchPa
           <Paper className="oauth-test-warning" variant="outlined"><Typography variant="body2" sx={{ fontWeight: 750 }}>Keep this code private</Typography><Typography variant="caption">The code is short-lived and can only be exchanged with the original PKCE verifier. Compare state with the value from the terminal before exchanging it.</Typography></Paper>
         </> : <Typography color="text.secondary" variant="body2">Start a fresh authorization request and approve it once. If an OAuth error appears, inspect the details above.</Typography>}
         <Box className="oauth-test-value"><Typography variant="caption" color="text.secondary">Returned state</Typography><Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>{state || "(missing)"}</Typography><Typography variant="caption" color="text.secondary" sx={{ mt: 1.5, display: "block" }}>Issuer</Typography><Typography variant="body2" sx={{ overflowWrap: "anywhere" }}>{issuer || "(missing)"}</Typography></Box>
-        <Button component={Link} href="/developer/applications" variant="outlined" startIcon={<ArrowBackRoundedIcon/>} sx={{ alignSelf: "flex-start" }}>Back to Developer Portal</Button>
+        <PortalLinkButton href="/developer/applications" variant="outlined" startIcon={<ArrowBackRoundedIcon/>} sx={{ alignSelf: "flex-start" }}>Back to Developer Portal</PortalLinkButton>
       </Stack>
     </Paper>
   </Box>;

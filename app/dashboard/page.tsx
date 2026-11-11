@@ -1,6 +1,5 @@
-import Link from "next/link";
 import {
-  Avatar, Box, Button, Card, CardContent, Chip, Divider, Stack, Typography,
+  Avatar, Box, Card, CardContent, Chip, Divider, Stack, Typography,
 } from "@mui/material";
 import ArrowOutwardRoundedIcon from "@mui/icons-material/ArrowOutwardRounded";
 import ShieldRoundedIcon from "@mui/icons-material/ShieldRounded";
@@ -13,6 +12,7 @@ import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import { getDashboardData, getPortalHeaderUser } from "@/app/actions";
 import { AuthenticatedShell } from "../components/AuthenticatedShell";
+import { PortalLinkButton, PortalLinkCard } from "../components/PortalLinks";
 
 function OverviewMetric({ label, value, detail, icon: Icon, href }: {
   label: string;
@@ -22,7 +22,7 @@ function OverviewMetric({ label, value, detail, icon: Icon, href }: {
   href: string;
 }) {
   return (
-    <Card component={Link} href={href} variant="outlined" className="oa-overview-metric">
+    <PortalLinkCard href={href} variant="outlined" className="oa-overview-metric">
       <CardContent>
         <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
           <Typography className="oa-overview-metric-label">{label}</Typography>
@@ -34,7 +34,7 @@ function OverviewMetric({ label, value, detail, icon: Icon, href }: {
           <ArrowOutwardRoundedIcon className="oa-overview-metric-arrow" />
         </Stack>
       </CardContent>
-    </Card>
+    </PortalLinkCard>
   );
 }
 
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
             <Typography component="h1" className="oa-dashboard-title">Good to see you, {displayName.split(" ")[0]}.</Typography>
             <Typography className="oa-dashboard-subtitle">A clear view of your account, access and security.</Typography>
           </Box>
-          <Button component={Link} href="/security" variant="contained" endIcon={<ArrowOutwardRoundedIcon />} className="oa-primary-action">Review security</Button>
+          <PortalLinkButton href="/security" variant="contained" endIcon={<ArrowOutwardRoundedIcon />} className="oa-primary-action">Review security</PortalLinkButton>
         </Stack>
 
         <Card className="oa-identity-hero" variant="outlined">
@@ -79,7 +79,7 @@ export default async function DashboardPage() {
                   <Typography className="oa-identity-status-value">{status}</Typography>
                 </Box>
               </Stack>
-              <Button component={Link} href="/profile" variant="outlined" className="oa-secondary-action" endIcon={<ArrowOutwardRoundedIcon />}>Edit profile</Button>
+              <PortalLinkButton href="/profile" variant="outlined" className="oa-secondary-action" endIcon={<ArrowOutwardRoundedIcon />}>Edit profile</PortalLinkButton>
             </Stack>
           </CardContent>
         </Card>
@@ -105,14 +105,14 @@ export default async function DashboardPage() {
               {metrics.connectedApps > 0 ? (
                 <Box className="oa-card-empty-copy">
                   <Typography className="oa-card-body">You have {metrics.connectedApps} active application authorization{metrics.connectedApps === 1 ? "" : "s"}.</Typography>
-                  <Button component={Link} href="/apps" variant="text" endIcon={<ArrowOutwardRoundedIcon />}>Manage app access</Button>
+                  <PortalLinkButton href="/apps" variant="text" endIcon={<ArrowOutwardRoundedIcon />}>Manage app access</PortalLinkButton>
                 </Box>
               ) : (
                 <Box className="oa-empty-panel">
                   <Box className="oa-empty-icon"><AppsRoundedIcon /></Box>
                   <Typography className="oa-empty-title">No apps connected yet</Typography>
                   <Typography className="oa-empty-description">When you authorize an application, you’ll see and manage its access here.</Typography>
-                  <Button component={Link} href="/apps" variant="outlined" startIcon={<AddRoundedIcon />} className="oa-secondary-action">Explore connected apps</Button>
+                  <PortalLinkButton href="/apps" variant="outlined" startIcon={<AddRoundedIcon />} className="oa-secondary-action">Explore connected apps</PortalLinkButton>
                 </Box>
               )}
             </CardContent>
@@ -125,8 +125,8 @@ export default async function DashboardPage() {
               <Typography className="oa-security-card-title">Your security, your control.</Typography>
               <Typography className="oa-security-card-copy">Review sign-in methods, check active devices and keep your identity protected.</Typography>
               <Stack spacing={1.1} className="oa-security-links">
-                <Button component={Link} href="/security" startIcon={<LockRoundedIcon />} endIcon={<ArrowOutwardRoundedIcon />}>Security settings</Button>
-                <Button component={Link} href="/activity" startIcon={<TimelineRoundedIcon />} endIcon={<ArrowOutwardRoundedIcon />}>View security activity</Button>
+                <PortalLinkButton href="/security" startIcon={<LockRoundedIcon />} endIcon={<ArrowOutwardRoundedIcon />}>Security settings</PortalLinkButton>
+                <PortalLinkButton href="/activity" startIcon={<TimelineRoundedIcon />} endIcon={<ArrowOutwardRoundedIcon />}>View security activity</PortalLinkButton>
               </Stack>
               <Chip label="SECURE IDENTITY" size="small" className="oa-security-chip" />
             </CardContent>
