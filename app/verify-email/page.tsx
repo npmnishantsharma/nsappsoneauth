@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email")?.trim() ?? "";
+  const redirectTo = searchParams.get("redirect") ?? "";
   const verificationResult = searchParams.get("verification");
   const [isSending, setIsSending] = useState(false);
   const [notice, setNotice] = useState("");
@@ -24,7 +25,7 @@ function VerifyEmailContent() {
       const response = await fetch("/api/signup/resend", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, redirect: redirectTo }),
       });
       const payload = (await response.json().catch(() => ({}))) as { message?: string; error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Unable to resend the email.");
@@ -83,7 +84,7 @@ function VerifyEmailContent() {
         )}
 
         <footer className="auth-footer">
-          <p className="create-account"><Link href="/signup">Back to sign up</Link> · <Link href="/">Sign in</Link></p>
+          <p className="create-account"><Link href={redirectTo ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : "/signup"}>Back to sign up</Link> · <Link href={redirectTo ? `/?redirect=${encodeURIComponent(redirectTo)}` : "/"}>Sign in</Link></p>
         </footer>
       </section>
     </main>
