@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { rotatePendingVerificationToken } from "@/src/lib/auth/account-store";
 import { BrevoEmailError, sendVerificationEmail } from "@/src/lib/email/brevo";
+import { safeRedirectPath } from "@/src/lib/auth/redirect";
 
 function getPublicBaseUrl(request: Request): URL {
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -20,7 +21,8 @@ function getPublicBaseUrl(request: Request): URL {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { email?: unknown };
+    const body = (await request.json()) as { email?: unknown; redirect?: unknown };
+    const redirectTo = safeRedirectPath(body.redirect);
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     if (!email || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
@@ -38,6 +40,7 @@ export async function POST(request: Request) {
 
     const verificationUrl = new URL("/api/verify", publicBaseUrl);
     verificationUrl.searchParams.set("token", pending.token);
+    if (redirectTo) verificationUrl.searchParams.set("redirect", redirectTo);
 
     await sendVerificationEmail({
       email: pending.email,
