@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createSessionForUser, verifyAccountToken } from "@/src/lib/auth/account-store";
 import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from "@/src/lib/auth/session";
+import { safeRedirectPath } from "@/src/lib/auth/redirect";
 
 function sessionCookie(response: NextResponse, sessionId: string) {
   response.cookies.set(SESSION_COOKIE_NAME, sessionId, {
@@ -26,6 +27,8 @@ function getClientMetadata(request: Request) {
 function failureRedirect(request: Request, reason: string) {
   const destination = new URL("/verify-email", request.url);
   destination.searchParams.set("verification", reason);
+  const redirectTo = safeRedirectPath(new URL(request.url).searchParams.get("redirect"));
+  if (redirectTo) destination.searchParams.set("redirect", redirectTo);
   return NextResponse.redirect(destination, 303);
 }
 
@@ -40,7 +43,8 @@ async function completeVerification(request: Request, token: string, redirectOnS
     const session = await createSessionForUser(account.id, getClientMetadata(request));
 
     if (redirectOnSuccess) {
-      const response = NextResponse.redirect(new URL("/dashboard", request.url), 303);
+      const redirectTo = safeRedirectPath(new URL(request.url).searchParams.get("redirect")) ?? "/dashboard";
+      const response = NextResponse.redirect(new URL(redirectTo, request.url), 303);
       return sessionCookie(response, session.id);
     }
 
