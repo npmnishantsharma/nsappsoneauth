@@ -4,6 +4,7 @@ import { discardPendingRegistration, createAccount } from "@/src/lib/auth/accoun
 import { BrevoEmailError, sendVerificationEmail } from "@/src/lib/email/brevo";
 import { validateEmail, validateUsername } from "@/src/lib/identity/identity.validation";
 import { allowOAuthRequest } from "@/src/lib/oauth/rate-limit";
+import { safeRedirectPath } from "@/src/lib/auth/redirect";
 
 export async function POST(request: Request) {
   try {
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
     const displayName = String(formData.get("displayName") ?? "").trim();
     const username = String(formData.get("username") ?? "").trim();
     const password = String(formData.get("password") ?? "");
+    const redirectTo = safeRedirectPath(formData.get("redirect"));
     const acceptTerms = formData.get("acceptTerms") !== null;
     const acceptPrivacy = formData.get("acceptPrivacy") !== null;
 
@@ -64,6 +66,7 @@ export async function POST(request: Request) {
 
       const verificationUrl = new URL("/api/verify", parsedBaseUrl);
       verificationUrl.searchParams.set("token", token);
+      if (redirectTo) verificationUrl.searchParams.set("redirect", redirectTo);
 
       await sendVerificationEmail({
         email: account.email,

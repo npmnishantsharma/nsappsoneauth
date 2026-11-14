@@ -30,6 +30,10 @@ function AuthorizeContent() {
     fetch(`/api/oauth/authorize?${query}`, { credentials: "same-origin", cache: "no-store", signal: controller.signal })
       .then(async response => {
         const payload = await response.json().catch(() => ({}));
+        if (response.status === 401 && typeof payload.redirect === "string" && payload.redirect.startsWith("/")) {
+          window.location.replace(payload.redirect);
+          throw new DOMException("Redirecting to sign in", "AbortError");
+        }
         if (!response.ok) throw new Error(payload.error || "Unable to load the authorization request.");
         return payload as AuthorizePayload;
       })

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { Suspense, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { LanguagePicker } from "../components/LanguagePicker";
 
@@ -99,7 +100,9 @@ function Icon({ name, className = "" }: { name: IconName; className?: string }) 
   );
 }
 
-export default function Home() {
+function SignupContent() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") ?? "";
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -123,6 +126,7 @@ export default function Home() {
 
     try {
       const formData = new FormData(event.currentTarget);
+      if (redirectTo) formData.set("redirect", redirectTo);
       const response = await fetch("/api/signup", {
         method: "POST",
         body: formData,
@@ -136,7 +140,9 @@ export default function Home() {
 
       if (!response.ok) throw new Error(payload.error ?? "Unable to create account.");
       if (payload.requiresVerification) {
-        window.location.assign(`/verify-email?email=${encodeURIComponent(payload.email ?? "")}`);
+        const verifyUrl = new URLSearchParams({ email: payload.email ?? "" });
+        if (redirectTo) verifyUrl.set("redirect", redirectTo);
+        window.location.assign(`/verify-email?${verifyUrl.toString()}`);
         return;
       }
       window.location.assign("/");
@@ -330,7 +336,7 @@ export default function Home() {
 
         <footer className="auth-footer">
           <p className="create-account">
-            {t("Already have an account?")} <Link href="/">{t("Sign in")}</Link>
+            {t("Already have an account?")} <Link href={redirectTo ? `/?redirect=${encodeURIComponent(redirectTo)}` : "/"}>{t("Sign in")}</Link>
           </p>
           <div className="footer-meta">
             <div className="language-choice">
@@ -353,4 +359,9 @@ export default function Home() {
       </section>
     </main>
   );
+}
+
+
+export default function SignupPage() {
+  return <Suspense fallback={<main className="auth-screen"><section className="auth-card signup-card"><p>Loading sign-up…</p></section></main>}><SignupContent /></Suspense>;
 }
