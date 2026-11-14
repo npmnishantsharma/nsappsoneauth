@@ -55,7 +55,16 @@ export async function GET(request: Request) {
   }
 
   const user = await getCurrentUser();
-  if (!user) return apiError("Sign in to OneAuth in this browser, then restart the authorization flow.", 401);
+  if (!user) {
+    // Preserve the complete, already-validated OAuth request through login/signup.
+    const authorizationPath = url.pathname + url.search;
+    const loginUrl = new URL("/", url.origin);
+    loginUrl.searchParams.set("redirect", authorizationPath);
+    return Response.json({ error: "Sign in to continue.", redirect: loginUrl.pathname + loginUrl.search }, {
+      status: 401,
+      headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
+    });
+  }
   const csrf = randomBytes(32).toString("base64url");
   const hidden = { clientId, redirectUri, state, challenge, nonce, resource, scopes: requestedScopes.filter(scope => !isCustomDataReadScope(scope)).join(" ") };
   const scopeLabel = (scope: string) => { const match = /^custom_data:read:([A-Za-z0-9_-]+):([A-Za-z][A-Za-z0-9_.-]*)$/.exec(scope); return match ? `Read only the “${match[2]}” field from app ${match[1]}` : ({ openid: "Sign in with OneAuth", profile: "Read your basic profile, including profile picture", email: "Read your email address", "custom_data:read": "Read custom data (only fields explicitly requested)", "custom_data:write": "Create and update this app's private custom data" } as Record<string, string>)[scope] ?? scope; };
